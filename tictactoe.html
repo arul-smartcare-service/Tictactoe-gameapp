@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tic-Tac-Toe</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --bg:#0D0E14; --surface:#151720; --card:#1C1E2A; --border:#2C2F42; --x-color:#7C3AED; --x-glow:rgba(124,58,237,.35); --o-color:#06B6D4; --o-glow:rgba(6,182,212,.35); --text:#F1F5F9; --muted:#64748B; }
+    body { font-family:'Space Grotesk',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:1.5rem 1rem; }
+    h1 { font-family:'JetBrains Mono',monospace; font-size:clamp(1.6rem,5vw,2.2rem); font-weight:700; letter-spacing:-1px; text-align:center; margin-bottom:.3rem; }
+    h1 .x{color:var(--x-color);} h1 .o{color:var(--o-color);}
+    .subtitle{color:var(--muted);font-size:.85rem;text-align:center;margin-bottom:1.8rem;}
+    .mode-row{display:flex;gap:.6rem;margin-bottom:1.5rem;}
+    .mode-btn{flex:1;padding:.55rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-family:'Space Grotesk',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .18s;}
+    .mode-btn.active{background:rgba(124,58,237,.15);border-color:var(--x-color);color:var(--text);}
+    .mode-btn:hover:not(.active){border-color:var(--muted);color:var(--text);}
+    .scoreboard{display:flex;gap:.75rem;margin-bottom:1.5rem;width:100%;max-width:360px;}
+    .score-box{flex:1;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:.9rem .5rem;text-align:center;transition:border-color .2s,box-shadow .2s;}
+    .score-box.active-x{border-color:var(--x-color);box-shadow:0 0 16px var(--x-glow);}
+    .score-box.active-o{border-color:var(--o-color);box-shadow:0 0 16px var(--o-glow);}
+    .score-label{font-size:.7rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.3rem;}
+    .score-label.x{color:var(--x-color);} .score-label.o{color:var(--o-color);}
+    .score-num{font-family:'JetBrains Mono',monospace;font-size:1.8rem;font-weight:700;line-height:1;}
+    .score-num.x{color:var(--x-color);} .score-num.o{color:var(--o-color);} .score-num.d{color:var(--muted);}
+    .status-bar{font-size:.88rem;font-weight:600;color:var(--muted);text-align:center;margin-bottom:1.2rem;min-height:1.4rem;transition:color .2s;}
+    .status-bar.x-turn{color:var(--x-color);} .status-bar.o-turn{color:var(--o-color);} .status-bar.win{color:#4ADE80;} .status-bar.draw{color:#F59E0B;}
+    .board{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:14px;width:100%;max-width:340px;box-shadow:0 24px 60px rgba(0,0,0,.4);margin-bottom:1.4rem;}
+    .cell{aspect-ratio:1;background:var(--card);border:1px solid var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:clamp(1.8rem,8vw,2.8rem);font-weight:700;cursor:pointer;transition:all .15s;user-select:none;}
+    .cell:hover:not(.taken){background:rgba(255,255,255,.04);border-color:var(--muted);transform:scale(1.04);}
+    .cell.taken{cursor:default;}
+    .cell.x-cell{color:var(--x-color);border-color:rgba(124,58,237,.4);background:rgba(124,58,237,.07);}
+    .cell.o-cell{color:var(--o-color);border-color:rgba(6,182,212,.4);background:rgba(6,182,212,.07);}
+    .cell.win-cell{border-color:#4ADE80!important;background:rgba(34,197,94,.08)!important;box-shadow:0 0 20px rgba(34,197,94,.25);animation:winPop .3s ease;}
+    @keyframes winPop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+    .cell.pop{animation:cellPop .15s ease;}
+    @keyframes cellPop{0%{transform:scale(0.7);opacity:.5}100%{transform:scale(1);opacity:1}}
+    .btn-row{display:flex;gap:.75rem;width:100%;max-width:340px;}
+    .btn{flex:1;padding:.75rem;border:none;border-radius:12px;font-family:'Space Grotesk',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;transition:all .18s;}
+    .btn:active{transform:scale(.96);}
+    .btn-new{background:linear-gradient(135deg,var(--x-color),#3B82F6);color:#fff;box-shadow:0 6px 20px var(--x-glow);}
+    .btn-new:hover{box-shadow:0 10px 28px var(--x-glow);transform:translateY(-2px);}
+    .btn-reset{background:var(--surface);border:1px solid var(--border);color:var(--muted);}
+    .btn-reset:hover{border-color:var(--muted);color:var(--text);transform:translateY(-2px);}
+
+    /* ABOUT */
+    .about-section{width:100%;max-width:340px;margin-top:1.5rem;background:var(--card);border:1px solid var(--border);border-radius:20px;overflow:hidden;}
+    .about-toggle{width:100%;padding:1.1rem 1.5rem;background:none;border:none;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
+    .about-toggle:hover{background:rgba(255,255,255,.03);}
+    .toggle-icon{font-size:.8rem;color:var(--x-color);transition:transform .3s;}
+    .about-body{display:none;padding:0 1.5rem 1.5rem;border-top:1px solid var(--border);}
+    .about-body.open{display:block;}
+    .about-label{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--x-color);margin:1.2rem 0 .6rem;}
+    .about-desc{font-size:.88rem;color:var(--muted);line-height:1.75;}
+    .feature-list{list-style:none;display:flex;flex-direction:column;gap:.45rem;}
+    .feature-list li{font-size:.88rem;color:var(--muted);display:flex;align-items:flex-start;gap:.5rem;line-height:1.5;}
+    .feature-list li::before{content:'▸';color:var(--x-color);flex-shrink:0;margin-top:.05rem;}
+    .concept-tags{display:flex;flex-wrap:wrap;gap:.4rem;}
+    .concept-tag{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--x-color);background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.25);padding:.25rem .65rem;border-radius:6px;}
+
+    @media(max-width:380px){.board{padding:10px;gap:8px;}.cell{border-radius:9px;}}
+    @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+  </style>
+</head>
+<body>
+<h1><span class="x">X</span> Tic-Tac-Toe <span class="o">O</span></h1>
+<p class="subtitle">Two players · or play against AI</p>
+
+<div class="mode-row" style="width:100%;max-width:340px;">
+  <button class="mode-btn active" id="btn-2p" onclick="setMode('2p')">👥 2 Players</button>
+  <button class="mode-btn" id="btn-ai" onclick="setMode('ai')">🤖 vs AI</button>
+</div>
+
+<div class="scoreboard">
+  <div class="score-box" id="box-x"><div class="score-label x" id="label-x">Player X</div><div class="score-num x" id="score-x">0</div></div>
+  <div class="score-box"><div class="score-label">Draws</div><div class="score-num d" id="score-d">0</div></div>
+  <div class="score-box" id="box-o"><div class="score-label o" id="label-o">Player O</div><div class="score-num o" id="score-o">0</div></div>
+</div>
+
+<div class="status-bar x-turn" id="status">Player X's turn</div>
+
+<div class="board" id="board">
+  <div class="cell" onclick="handleClick(0)"></div><div class="cell" onclick="handleClick(1)"></div><div class="cell" onclick="handleClick(2)"></div>
+  <div class="cell" onclick="handleClick(3)"></div><div class="cell" onclick="handleClick(4)"></div><div class="cell" onclick="handleClick(5)"></div>
+  <div class="cell" onclick="handleClick(6)"></div><div class="cell" onclick="handleClick(7)"></div><div class="cell" onclick="handleClick(8)"></div>
+</div>
+
+<div class="btn-row">
+  <button class="btn btn-new" onclick="newGame()">▶ New Game</button>
+  <button class="btn btn-reset" onclick="resetAll()">↺ Reset Scores</button>
+</div>
+
+<!-- ABOUT SECTION -->
+<div class="about-section">
+  <button class="about-toggle" onclick="toggleAbout()">
+    <span>📖 About This Project</span>
+    <span class="toggle-icon" id="toggle-icon">▼</span>
+  </button>
+  <div class="about-body" id="about-body">
+    <div class="about-label">Project Overview</div>
+    <p class="about-desc">An interactive Tic-Tac-Toe web application built with HTML, CSS, and JavaScript. Players can compete against each other or challenge an unbeatable AI opponent powered by the Minimax algorithm.</p>
+
+    <div class="about-label">✨ Features</div>
+    <ul class="feature-list">
+      <li>2 Player mode — play against a friend on the same device</li>
+      <li>vs AI mode — unbeatable AI using Minimax algorithm</li>
+      <li>Scoreboard — tracks X wins, O wins, and Draws across games</li>
+      <li>Winning cells highlighted with green glow animation</li>
+      <li>Draw detection — automatically detected and announced</li>
+      <li>Active player glow — scoreboard shows whose turn it is</li>
+      <li>New Game — fresh round while keeping scores intact</li>
+      <li>Reset Scores — wipes everything and starts fresh</li>
+      <li>Smooth cell pop animation on every move</li>
+      <li>Fully responsive — works on mobile and desktop</li>
+    </ul>
+
+    <div class="about-label">🎨 Design</div>
+    <ul class="feature-list">
+      <li>Dark theme — deep black background with vibrant accents</li>
+      <li>X = Purple, O = Cyan — clear visual distinction for each player</li>
+      <li>Glowing score boxes highlight the active player's turn</li>
+      <li>Win animation — winning cells scale up with green glow effect</li>
+      <li>Gradient button with purple-to-blue color scheme</li>
+    </ul>
+
+    <div class="about-label">💡 Key Concepts Used</div>
+    <div class="concept-tags">
+      <span class="concept-tag">Minimax Algorithm</span>
+      <span class="concept-tag">DOM Manipulation</span>
+      <span class="concept-tag">Event Handling</span>
+      <span class="concept-tag">Game State Logic</span>
+      <span class="concept-tag">CSS Animations</span>
+      <span class="concept-tag">Array Methods</span>
+      <span class="concept-tag">Recursion</span>
+      <span class="concept-tag">Responsive CSS</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  const WINS=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  let board=Array(9).fill(null),current='X',gameOver=false,mode='2p',scores={X:0,O:0,D:0};
+  const cells=document.querySelectorAll('.cell');
+  const statusEl=document.getElementById('status'),sX=document.getElementById('score-x'),sO=document.getElementById('score-o'),sD=document.getElementById('score-d');
+  const boxX=document.getElementById('box-x'),boxO=document.getElementById('box-o'),labelO=document.getElementById('label-o');
+
+  function setMode(m){mode=m;document.getElementById('btn-2p').classList.toggle('active',m==='2p');document.getElementById('btn-ai').classList.toggle('active',m==='ai');labelO.textContent=m==='ai'?'AI (O)':'Player O';resetAll();}
+  function handleClick(i){if(gameOver||board[i])return;if(mode==='ai'&&current==='O')return;makeMove(i,current);if(!gameOver&&mode==='ai'&&current==='O')setTimeout(()=>aiMove(),350);}
+  function makeMove(i,player){board[i]=player;const cell=cells[i];cell.textContent=player;cell.classList.add('taken',player==='X'?'x-cell':'o-cell','pop');setTimeout(()=>cell.classList.remove('pop'),200);const win=checkWin(player);if(win){win.forEach(idx=>cells[idx].classList.add('win-cell'));gameOver=true;scores[player]++;updateScores();setStatus(`${player==='X'?'Player X':(mode==='ai'?'AI':'Player O')} wins! 🎉`,'win');highlightActive(null);return;}if(board.every(v=>v)){gameOver=true;scores.D++;updateScores();setStatus("It's a draw!",'draw');highlightActive(null);return;}current=current==='X'?'O':'X';const who=current==='X'?'Player X':(mode==='ai'?'AI (O)':'Player O');setStatus(`${who}'s turn`,current==='X'?'x-turn':'o-turn');highlightActive(current);}
+  function checkWin(p){for(const c of WINS)if(c.every(i=>board[i]===p))return c;return null;}
+  function aiMove(){makeMove(getBestMove(),'O');}
+  function getBestMove(){let best=-Infinity,move=-1;for(let i=0;i<9;i++){if(!board[i]){board[i]='O';const s=minimax(board,0,false);board[i]=null;if(s>best){best=s;move=i;}}}return move;}
+  function minimax(b,depth,isMax){if(checkWinFor(b,'O'))return 10-depth;if(checkWinFor(b,'X'))return depth-10;if(b.every(v=>v))return 0;if(isMax){let best=-Infinity;for(let i=0;i<9;i++){if(!b[i]){b[i]='O';best=Math.max(best,minimax(b,depth+1,false));b[i]=null;}}return best;}else{let best=Infinity;for(let i=0;i<9;i++){if(!b[i]){b[i]='X';best=Math.min(best,minimax(b,depth+1,true));b[i]=null;}}return best;}}
+  function checkWinFor(b,p){return WINS.some(c=>c.every(i=>b[i]===p));}
+  function setStatus(msg,cls=''){statusEl.textContent=msg;statusEl.className='status-bar '+cls;}
+  function highlightActive(player){boxX.className='score-box'+(player==='X'?' active-x':'');boxO.className='score-box'+(player==='O'?' active-o':'');}
+  function updateScores(){sX.textContent=scores.X;sO.textContent=scores.O;sD.textContent=scores.D;}
+  function newGame(){board=Array(9).fill(null);current='X';gameOver=false;cells.forEach(c=>{c.textContent='';c.className='cell';});setStatus("Player X's turn",'x-turn');highlightActive('X');}
+  function resetAll(){scores={X:0,O:0,D:0};updateScores();newGame();}
+  function toggleAbout(){const body=document.getElementById('about-body'),icon=document.getElementById('toggle-icon');body.classList.toggle('open');icon.textContent=body.classList.contains('open')?'▲':'▼';}
+  highlightActive('X');
+</script>
+</body>
+</html>
